@@ -22,5 +22,7 @@ func Router() *gin.Engine {
 	r.POST("/send/code", service.SendCode)
 	// 用户注册
 	r.POST("/register", service.Register)
+	// 查询用户的个人信息
+	r.GET("/user/query", service.UserQuery)
 	return r
 }

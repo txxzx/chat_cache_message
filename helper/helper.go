@@ -22,9 +22,9 @@ import (
 **/
 
 type UserClaims struct {
-	//Identity string `json:"identity"`
-	Identity primitive.ObjectID `json:"identity"`
-	Email    string             `json:"email"`
+	Identity  string             `json:"identity"`
+	Identity1 primitive.ObjectID `json:"identity1"`
+	Email     string             `json:"email"`
 	jwt.StandardClaims
 }
 
