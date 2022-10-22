@@ -219,7 +219,7 @@ func UserQuery(c *gin.Context) {
 		})
 		return
 	}
-	uc := c.MustGet("user_claims").(*helper.UserClaims)
+	//uc := c.MustGet("user_claims").(*helper.UserClaims)
 
 	data := UserQueryResult{
 		Nickname: ub.Nickname,
@@ -228,7 +228,7 @@ func UserQuery(c *gin.Context) {
 		Avatar:   ub.Avatar,
 		IsFriend: false,
 	}
-	b, err := models.JudgeUserIsFriend(ub.Identity, uc.Identity)
+	b, err := models.JudgeUserIsFriend(ub.Identity, "")
 	if err != nil {
 		data.IsFriend = b
 	}

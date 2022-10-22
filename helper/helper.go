@@ -22,9 +22,9 @@ import (
 **/
 
 type UserClaims struct {
-	Identity  string             `json:"identity"`
-	Identity1 primitive.ObjectID `json:"identity1"`
-	Email     string             `json:"email"`
+	Identity string `json:"identity"`
+	//Identity primitive.ObjectID `json:"identity"`
+	Email string `json:"email"`
 	jwt.StandardClaims
 }
 
@@ -39,12 +39,12 @@ var myKey = []byte("im")
 // GenerateToken
 // 生成 token
 func GenerateToken(identity, email string) (string, error) {
-	objectId, err := primitive.ObjectIDFromHex(identity)
-	if err != nil {
-		return "", err
-	}
+	//objectId, err := primitive.ObjectIDFromHex(identity)
+	//if err != nil {
+	//	return "", err
+	//}
 	UserClaim := &UserClaims{
-		Identity:       objectId,
+		Identity:       identity,
 		Email:          email,
 		StandardClaims: jwt.StandardClaims{},
 	}

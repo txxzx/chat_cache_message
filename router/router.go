@@ -18,11 +18,14 @@ func Router() *gin.Engine {
 	// 获取用户详情
 	auth := r.Group("/u", middlewares.AuthCheck())
 	auth.GET("/user/detail", service.UserDetail)
+	auth.GET("/websocket/message", service.WebsocketMessage)
 	// 发送验证码
 	r.POST("/send/code", service.SendCode)
 	// 用户注册
 	r.POST("/register", service.Register)
 	// 查询用户的个人信息
 	r.GET("/user/query", service.UserQuery)
+	// 发送接收消息
+
 	return r
 }
