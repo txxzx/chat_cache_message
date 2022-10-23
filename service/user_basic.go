@@ -219,7 +219,7 @@ func UserQuery(c *gin.Context) {
 		})
 		return
 	}
-	//uc := c.MustGet("user_claims").(*helper.UserClaims)
+	uc := c.MustGet("user_claims").(*helper.UserClaims)
 
 	data := UserQueryResult{
 		Nickname: ub.Nickname,
@@ -228,7 +228,7 @@ func UserQuery(c *gin.Context) {
 		Avatar:   ub.Avatar,
 		IsFriend: false,
 	}
-	b, err := models.JudgeUserIsFriend(ub.Identity, "")
+	b, err := models.JudgeUserIsFriend(ub.Identity, uc.Identity)
 	if err != nil {
 		data.IsFriend = b
 	}
@@ -246,4 +246,115 @@ type UserQueryResult struct {
 	Email    string `json:"email"`
 	Avatar   string `json:"avatar"`
 	IsFriend bool   `json:"is_friend"` // 是否为好友[true 好友 false不是好友]
+}
+
+func UserAdd(c *gin.Context) {
+	account := c.PostForm("account")
+	if account == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "参数不正确",
+		})
+		return
+	}
+	ub, err := models.GetUserBasicByAccount(account)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "数据查询异常",
+		})
+		return
+	}
+	uc := c.MustGet("user_claims").(*helper.UserClaims)
+
+	b, err := models.JudgeUserIsFriend(ub.Identity, uc.Identity)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "数据异常" + err.Error(),
+		})
+		return
+	}
+	if b {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "互为好友，不可重复添加",
+		})
+		return
+	}
+	// 保存房间记录
+	rb := &models.RoomBasic{
+		Identity:     helper.GetUuid(),
+		UserIdentity: uc.Identity,
+		CreatedAt:    time.Now().Unix(),
+		UpdatedAt:    time.Now().Unix(),
+	}
+	if err := models.InsertOneRoomBasic(rb); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "数据查询失败",
+		})
+		return
+	}
+	// 保存用户与房间的关联关系
+	ur := &models.UserRoom{
+		UserIdentity: uc.Identity,
+		RoomIdentity: rb.Identity,
+		RoomType:     1,
+		CreatedAt:    time.Now().Unix(),
+		UpdatedAt:    time.Now().Unix(),
+	}
+	if err := models.InsertUserRoom(ur); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "数据库异常" + err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "添加成功",
+	})
+}
+
+// 删除好友
+func DeleteUser(c *gin.Context) {
+	identity := c.Query("identity")
+	if identity == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "参数不正确",
+		})
+		return
+	}
+	// 獲取房间identity
+	uc := c.MustGet("user_claims").(*helper.UserClaims)
+	roomIdentity := models.GetUserRoomIdentity(identity, uc.Identity)
+	if roomIdentity == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "不是好友无需删除",
+		})
+		return
+	}
+	// 删除user_room关联关系
+	if err := models.DeleteUserRoom(roomIdentity); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "删除失败系统异常" + err.Error(),
+		})
+		return
+	}
+	// 删除room_basic关联关系
+	if err := models.DeleteRoomBasic(roomIdentity); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "删除失败,系统异常" + err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"code": -1,
+		"msg":  "删除好友成功",
+	})
 }

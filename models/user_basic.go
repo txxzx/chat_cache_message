@@ -4,6 +4,7 @@ import (
 	"context"
 	tp "github.com/henrylee2cn/teleport"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 /**
@@ -41,8 +42,12 @@ func GetUserBasicByAccountPassword(account, password string) (*UserBasic, error)
 // 通过用户标识查询用户信息
 func GetUserBasicByIdentity(identity string) (*UserBasic, error) {
 	ub := new(UserBasic)
+	id, err := primitive.ObjectIDFromHex(identity)
+	if err != nil {
+		return nil, err
+	}
 	if err := Mongo.Collection(UserBasic{}.CollectionName()).
-		FindOne(context.Background(), bson.D{{"_id", identity}}).
+		FindOne(context.Background(), bson.D{{"_id", id}}).
 		Decode(ub); err != nil {
 		tp.Errorf("%v", err)
 		return nil, err
@@ -75,7 +80,7 @@ func InsertOneUserBasic(ub *UserBasic) error {
 func GetUserBasicByAccount(account string) (*UserBasic, error) {
 	ub := new(UserBasic)
 	if err := Mongo.Collection(UserBasic{}.CollectionName()).
-		FindOne(context.Background(), bson.D{{"_id", account}}).
+		FindOne(context.Background(), bson.D{{"account", account}}).
 		Decode(ub); err != nil {
 		tp.Errorf("%v", err)
 		return nil, err
@@ -109,4 +114,32 @@ func JudgeUserIsFriend(UserIdentity1, UserIdentity2 string) (bool, error) {
 		return true, nil
 	}
 	return false, nil
+}
+
+// 获取好友的Identity
+func GetUserRoomIdentity(UserIdentity1, UserIdentity2 string) string {
+	// 查询user1的单聊房间列表
+	cuser, err := Mongo.Collection(UserRoom{}.CollectionName()).
+		Find(context.Background(), bson.D{{"user_identity", UserIdentity1}, {"room_type", 1}})
+	roomIdentity := make([]string, 0)
+	if err != nil {
+		return ""
+	}
+	for cuser.Next(context.Background()) {
+		ur := new(UserRoom)
+		err := cuser.Decode(ur)
+		if err != nil {
+			return ""
+		}
+		roomIdentity = append(roomIdentity, ur.RoomIdentity)
+	}
+	// 获取关联 userIdentity2 单间聊天房间数
+	ur := new(UserRoom)
+	err = Mongo.Collection(UserRoom{}.CollectionName()).
+		FindOne(context.Background(), bson.M{"user_identity": UserIdentity2, "room_identity": bson.M{"$in": roomIdentity}}).Decode(ur)
+	if err != nil {
+		tp.Errorf("err-> %v", err)
+		return ""
+	}
+	return ur.RoomIdentity
 }

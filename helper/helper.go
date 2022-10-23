@@ -21,6 +21,12 @@ import (
     @date: 2022/10/15
 **/
 
+//type UserClaims1 struct {
+//	//Identity string `json:"identity"`
+//	Identity primitive.ObjectID `json:"identity"`
+//	Email string `json:"email"`
+//	jwt.StandardClaims
+//}
 type UserClaims struct {
 	Identity string `json:"identity"`
 	//Identity primitive.ObjectID `json:"identity"`
