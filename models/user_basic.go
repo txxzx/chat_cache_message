@@ -4,7 +4,6 @@ import (
 	"context"
 	tp "github.com/henrylee2cn/teleport"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 /**
@@ -40,7 +39,7 @@ func GetUserBasicByAccountPassword(account, password string) (*UserBasic, error)
 }
 
 // 通过用户标识查询用户信息
-func GetUserBasicByIdentity(identity primitive.ObjectID) (*UserBasic, error) {
+func GetUserBasicByIdentity(identity string) (*UserBasic, error) {
 	ub := new(UserBasic)
 	if err := Mongo.Collection(UserBasic{}.CollectionName()).
 		FindOne(context.Background(), bson.D{{"_id", identity}}).
@@ -70,4 +69,44 @@ func InsertOneUserBasic(ub *UserBasic) error {
 		return err
 	}
 	return nil
+}
+
+// 根据用户账号查询用户信息
+func GetUserBasicByAccount(account string) (*UserBasic, error) {
+	ub := new(UserBasic)
+	if err := Mongo.Collection(UserBasic{}.CollectionName()).
+		FindOne(context.Background(), bson.D{{"_id", account}}).
+		Decode(ub); err != nil {
+		tp.Errorf("%v", err)
+		return nil, err
+	}
+	return ub, nil
+}
+
+// 判断用户是否为好友
+func JudgeUserIsFriend(UserIdentity1, UserIdentity2 string) (bool, error) {
+	// 查询user1的单聊房间列表
+	cuser, err := Mongo.Collection(UserRoom{}.CollectionName()).
+		Find(context.Background(), bson.D{{"user_identity", UserIdentity1}, {"room_type", 1}})
+	roomIdentity := make([]string, 0)
+	if err != nil {
+		return false, err
+	}
+	for cuser.Next(context.Background()) {
+		ur := new(UserRoom)
+		err := cuser.Decode(ur)
+		if err != nil {
+			return false, err
+		}
+		roomIdentity = append(roomIdentity, ur.RoomIdentity)
+	}
+	// 获取关联 userIdentity2 单间聊天房间数
+	cunt, err := Mongo.Collection(UserRoom{}.CollectionName()).CountDocuments(context.Background(), bson.M{"user_identity": UserIdentity2, "room_identity": bson.M{"$in": roomIdentity}})
+	if err != nil {
+		return false, err
+	}
+	if cunt > 0 {
+		return true, nil
+	}
+	return false, nil
 }

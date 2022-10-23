@@ -200,3 +200,50 @@ func Register(c *gin.Context) {
 		},
 	})
 }
+
+// 获取用户个人信息
+func UserQuery(c *gin.Context) {
+	account := c.Query("account")
+	if account == "" {
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "查询参数不正确",
+		})
+	}
+	ub, err := models.GetUserBasicByAccount(account)
+	if err != nil {
+		tp.Errorf("[DB ERROR]:%v", err)
+		c.JSON(http.StatusOK, gin.H{
+			"code": -1,
+			"msg":  "数据查询异常",
+		})
+		return
+	}
+	//uc := c.MustGet("user_claims").(*helper.UserClaims)
+
+	data := UserQueryResult{
+		Nickname: ub.Nickname,
+		Sex:      ub.Sex,
+		Email:    ub.Email,
+		Avatar:   ub.Avatar,
+		IsFriend: false,
+	}
+	b, err := models.JudgeUserIsFriend(ub.Identity, "")
+	if err != nil {
+		data.IsFriend = b
+	}
+	data.IsFriend = b
+	c.JSON(http.StatusOK, gin.H{
+		"code": 200,
+		"msg":  "数据查询成功",
+		"data": data,
+	})
+}
+
+type UserQueryResult struct {
+	Nickname string `json:"nickname"`
+	Sex      int    `json:"sex"`
+	Email    string `json:"email"`
+	Avatar   string `json:"avatar"`
+	IsFriend bool   `json:"is_friend"` // 是否为好友[true 好友 false不是好友]
+}
