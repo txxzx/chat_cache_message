@@ -32,5 +32,8 @@ func Router() *gin.Engine {
 
 	// 添加用户
 	auth.POST("/user/add", service.UserAdd)
+
+	// 删除好友
+	auth.DELETE("/user/delete", service.DeleteUser)
 	return r
 }

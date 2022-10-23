@@ -13,7 +13,7 @@ import (
 type UserRoom struct {
 	UserIdentity string `bson:"user_identity"`
 	RoomIdentity string `bson:"room_identity"`
-	RoomType int `bson:"room_type"`
+	RoomType     int    `bson:"room_type"`
 	CreatedAt    int64  `bson:"created_at"`
 	UpdatedAt    int64  `bson:"updated_at"`
 }
@@ -56,6 +56,16 @@ func GetUserRoomByRoomIdentity(roomIdentity string) ([]*UserRoom, error) {
 func InsertUserRoom(ur *UserRoom) error {
 	_, err := Mongo.Collection(UserRoom{}.CollectionName()).InsertOne(context.Background(), ur)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// 删除userRoom里面的关联关系
+func DeleteUserRoom(rooIdentity string) error {
+	if _, err := Mongo.Collection(UserRoom{}.CollectionName()).
+		DeleteOne(context.Background(), bson.M{"room_identity": rooIdentity}); err != nil {
+		tp.Errorf("%v", err)
 		return err
 	}
 	return nil
