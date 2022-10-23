@@ -18,6 +18,7 @@ func Router() *gin.Engine {
 	// 获取用户详情
 	auth := r.Group("/u", middlewares.AuthCheck())
 	auth.GET("/user/detail", service.UserDetail)
+	// 发送接收消息
 	auth.GET("/websocket/message", service.WebsocketMessage)
 	// 发送验证码
 	r.POST("/send/code", service.SendCode)
@@ -25,7 +26,7 @@ func Router() *gin.Engine {
 	r.POST("/register", service.Register)
 	// 查询用户的个人信息
 	r.GET("/user/query", service.UserQuery)
-	// 发送接收消息
-
+	// 聊天记录查询
+	auth.GET("/chat/list", service.ChatList)
 	return r
 }
