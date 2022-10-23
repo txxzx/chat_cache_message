@@ -4,6 +4,7 @@ import (
 	"context"
 	tp "github.com/henrylee2cn/teleport"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 /**
@@ -41,8 +42,12 @@ func GetUserBasicByAccountPassword(account, password string) (*UserBasic, error)
 // 通过用户标识查询用户信息
 func GetUserBasicByIdentity(identity string) (*UserBasic, error) {
 	ub := new(UserBasic)
+	id,err :=primitive.ObjectIDFromHex(identity)
+	if err!=nil{
+		return nil,err
+	}
 	if err := Mongo.Collection(UserBasic{}.CollectionName()).
-		FindOne(context.Background(), bson.D{{"_id", identity}}).
+		FindOne(context.Background(), bson.D{{"_id", id}}).
 		Decode(ub); err != nil {
 		tp.Errorf("%v", err)
 		return nil, err
@@ -75,7 +80,7 @@ func InsertOneUserBasic(ub *UserBasic) error {
 func GetUserBasicByAccount(account string) (*UserBasic, error) {
 	ub := new(UserBasic)
 	if err := Mongo.Collection(UserBasic{}.CollectionName()).
-		FindOne(context.Background(), bson.D{{"_id", account}}).
+		FindOne(context.Background(), bson.D{{"account", account}}).
 		Decode(ub); err != nil {
 		tp.Errorf("%v", err)
 		return nil, err

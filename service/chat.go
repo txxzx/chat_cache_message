@@ -32,6 +32,7 @@ func ChatList(c *gin.Context) {
 		})
 		return
 	}
+	// 分页查询
 	pageIndex, _ := strconv.ParseInt(c.Query("page_index"), 10, 32)
 	pageSize, _ := strconv.ParseInt(c.Query("page_size"), 10, 32)
 	skip := (pageIndex - 1) * pageSize
